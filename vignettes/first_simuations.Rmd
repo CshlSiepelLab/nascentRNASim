@@ -1,0 +1,52 @@
+---
+title: "Empirical simulations of polymersase density from nascent RNA sequencing data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Empirical simulations of polymersase density from nascent RNA sequencing data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+First lets download a database of transcripts. This package includes some convenience
+functions that allow us to download data directly from Ensembl and build a txdb, then
+cache it so to make repeated simulation easier. If you have already done this you may
+skip to loading the txdb as shown in the next step.
+```{r, include = FALSE}
+library(nascentRNASim)
+cache_set_dir()
+# Only download a txdb if you need a list of transcripts
+# download_txdb("hsapiens", ensembl_version = "98")
+```
+
+Now we can view the txdb that we have cached locally. (Again, only if you don't have one
+already).
+```{r list_txdb}
+cache_set_dir()
+list_cached_txdb()
+```
+
+Using the file name we can load it into our workspace.
+```{r load_txdb}
+txdb <- suppressMessages(load_txdb("homo_sapiens-grch38.p13-ensembl_genes_98.txdb"))
+```
+
+The procedure we use for simulating signals of polymerase density uses composites of
+empirical signal from exemplar regions. To do this, first we must curate a set of genes
+where virtually all polymerase density in the region can be confidently attributed to a
+single annotation. These genes are selected based on several characteristics: length,
+distance from other transcripts, and transcript biotype (optional). (NOTE: either TxDb
+or GRanges objects can be supplied to \code{filter_annotations()})
+
+```{r}
+anno <- filter_annotations(txdb, min_distance = 1e4, min_length = 3e3,
+                   keep_chromosomes = 1:22, keep_tx_biotype = "protein_coding")
+```
+
+```{r}
+bigwig_plus <- "E:/deepTRED_data/6045_7157_27176_HNHKJBGXX_K562_0min_celastrol10uM_rep2_GB_CAGATC_R1_plus.primary.bw"
+bigwig_minus <- "E:/deepTRED_data/6045_7157_27176_HNHKJBGXX_K562_0min_celastrol10uM_rep2_GB_CAGATC_R1_minus.primary.bw"
+ta <- transcript_archetypes(anno, bigwig_plus, bigwig_minus, flank = 5e3,
+                                  abundance_filter = 0.1,
+                                  mask = c(1e3, 1e3)) 
+```
+
