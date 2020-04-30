@@ -38,7 +38,7 @@ distance from other transcripts, and transcript biotype (optional). (NOTE: eithe
 or GRanges objects can be supplied to \code{filter_annotations()})
 
 ```{r}
-anno <- filter_annotations(txdb, min_distance = 1e4, min_length = 3e3,
+anno <- filter_annotations(txdb, min_distance = 7e3, min_length = 3e3,
                    keep_chromosomes = 1:22, keep_tx_biotype = "protein_coding")
 ```
 
@@ -49,4 +49,25 @@ ta <- transcript_archetypes(anno, bigwig_plus, bigwig_minus, flank = 5e3,
                                   abundance_filter = 0.1,
                                   mask = c(1e3, 1e3)) 
 ```
+
+```{r}
+template <- transcripts(txdb)
+sim_anno <- simulate_annotations(ta = ta, n = 1e3, template = template, seed = 5,
+                                 genome = "hg38")
+```
+Simulate abundances
+```{r}
+annotations <- simulate_abundances(annotations = sim_anno, sampling_dist = rlnorm,
+                                zero_point_mass = 0.8)
+```
+Simulate 5' read density
+```{r}
+sim_dat <- simulate_data(ta, annotations = annotations)
+```
+
+Export data
+```{r}
+export_simulation(annotations, sim_dat, ta, "~/Downloads/test_nascent_sim", "test")
+```
+
 
