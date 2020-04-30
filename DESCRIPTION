@@ -9,14 +9,31 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+bioCviews:
+  Software,
+  StatisticalMethod,
+  Transcriptomics
+Imports:
+    GenomicRanges,
+    GenomeInfoDb (>= 1.22.1),
+    data.table (>= 1.12.8),
+    rtracklayer (>= 1.46.0),
+    GenomicFeatures,
+    GenomeInfoDb,
+    GenomicRanges,
+    S4Vectors,
+    IRanges,
+    methods,
+    rappdirs,
+    stringr,
+    AnnotationDbi,
+    biomaRt
 Suggests: 
     knitr,
     rmarkdown,
-    GenomicRanges,
-    GenomeInfoDb,
-    data.table
+    testthat
 VignetteBuilder: knitr
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Collate: 
     'data_handling.R'
     'transcript_archetypes.R'
