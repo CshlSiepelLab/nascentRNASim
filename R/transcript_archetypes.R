@@ -642,7 +642,7 @@ resample_reads <- function(x, size, replace = T, jitter = 0) {
 #' @param simulation_id character string to name simulation outputs with
 #'
 #' @return A resampled numeric vector of 5' read counts
-#'
+#' @importFrom data.table :=
 #' @name resample_reads
 #' @export
 export_simulation <- function(annotations, data, ta, directory = ".",
@@ -654,7 +654,7 @@ export_simulation <- function(annotations, data, ta, directory = ".",
   ta_path <- file.path(directory, paste0(simulation_id, "_archetypes.RData"))
   bed <- data.table::as.data.table(annotations)
   bed[, start := start - 1]
-  bed <- bed[, .(seqnames, start, end, '.',0 , strand, gene_id, transcript_id)]
+  bed <- bed[, .(seqnames, start, end, '.', bed$score , strand, gene_id, transcript_id)]
   data.table::fwrite(file = bed_path, x = bed, compress = "gzip", sep = "\t",
                      col.names = F)
   rtracklayer::export.bw(sim_dat$plus, plus_path)

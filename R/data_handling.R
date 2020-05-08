@@ -60,7 +60,7 @@ methods::setClass("profile_views",
 #' @export
 profile_views <- function(bigwig_file, query_ranges) {
   # Restrict to active seqnames
-  GenomeInfoDb::seqlevels(query_ranges) <- seqlevelsInUse(query_ranges)
+  GenomeInfoDb::seqlevels(query_ranges) <- GenomeInfoDb::seqlevelsInUse(query_ranges)
 
   # Get unique chromosome names in bins
   chrom <-
