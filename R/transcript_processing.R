@@ -169,3 +169,53 @@ filter_annotations <- function(tx, min_distance = 2e4, min_length = 3e3,
   }
   return(candidates)
 }
+
+#' @title Get background regions
+#'
+#' @description Gets a filtered candidate list of background regions to use for
+#' simulation
+#'
+#' @param tx A \code{\link[GenomicRanges]{GRanges-class}} or
+#' \code{\link[GenomicFeatures]{TxDb-class}}
+#' @param tx_buffer_length length of exclued region between inactive region and closest
+#' transcript (default 40kb; strand agnostic).
+#' @param min_length minimum length of candidate inactive region (default 3kb)
+#' @param keep_chromosomes a character vector of chromosomes to select candidate
+#' transcripts from. Defaults to all chromsomes in \code{tx} object
+#'
+#' @return A list of vectors with each one corresponding to one set of bins and
+#' each element of a vector corresponding to a bin
+#'
+#' @name inactive_regions
+#' @rdname inactive_regions
+#'
+#' @export
+inactive_regions <- function(tx, tx_buffer_length = 2e4, min_length = 3e3,
+                               keep_chromosomes = NULL) {
+  # Check that tx is a GRanges or txdb object
+  if (!class(tx) %in% c("GRanges", "TxDb")) {
+    stop("tx must be a GRanges or Txdb object")
+  }
+
+  # Extract transcripts from a txdb
+  if (class(tx) == "TxDb") {
+    tx_gr <- GenomicFeatures::transcripts(tx, columns=c("tx_name", "gene_id",
+                                                        "tx_type"))
+  }
+
+  # Keep specified chromosomes using filter
+  if (!is.null(keep_chromosomes)) {
+    keep_chromosomes <- as.character(keep_chromosomes)
+    user_style <- GenomeInfoDb::seqlevelsStyle(keep_chromosomes)
+    GenomeInfoDb::seqlevelsStyle(tx_gr) <- user_style[1]
+    GenomeInfoDb::seqlevels(tx_gr, pruning.mode="coarse") <- keep_chromosomes
+  }
+
+  # Candidate inactive regions
+  candidates <- GenomicRanges::gaps(GenomicRanges::reduce(tx_gr + tx_buffer_length))
+
+  # Now filter the candidates by length
+  candidates <- candidates[width(candidates) >= min_length]
+  return(candidates)
+}
+

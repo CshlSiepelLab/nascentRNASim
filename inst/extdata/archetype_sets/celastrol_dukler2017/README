@@ -1,0 +1,10 @@
+Archetypes manually curated using the untreated PRO-seq samples from the Dukler et al.
+(2017) Genome Research paper. Archetypes were selected by manually examining both
+replicates and selecting transcripts where:
+  1. The transcript is clearly the only one producing the vast majority of the  signal
+    (or allowed multiple transcripts producing signal if they all have about the same
+    TSS/TES). This is cross-checked with PRO-cap data from Core & Martins et al. 2014
+  2. The signal between the transcript and adjacent transcripts drops off to
+    approximately background levels between them
+  3. The start of transcription is pretty close the the annotated TSS
+  4. The transcript averages one read per 20bp when quantified on the combined replicates
