@@ -87,15 +87,15 @@ transcript_archetypes <- function(transcripts, bigwig_plus, bigwig_minus, flank 
   sense <- list()
   antisense <- list()
   abundance <- numeric(length(transcripts))
-  sense_plus <- BiocGenerics::as.vector(GenomicRanges::strand(transcripts) == "+")
+  sense_plus <- S4Vectors::decode(GenomicRanges::strand(transcripts) == "+")
 
   for(i in seq_along(transcripts)){
     if (sense_plus[i]) {
-      sense[[i]] <- abs(as.vector(pv_plus[i])[[1]])
-      antisense[[i]] <- abs(as.vector(pv_minus[i])[[1]])
+      sense[[i]] <- abs(pv_plus[i][[1]])
+      antisense[[i]] <- abs(pv_minus[i][[1]])
     } else {
-      sense[[i]] <- abs(S4Vectors::rev(as.vector(pv_minus[i]))[[1]])
-      antisense[[i]] <- abs(S4Vectors::rev(as.vector(pv_plus[i]))[[1]])
+      sense[[i]] <- abs(S4Vectors::rev(pv_minus[i][[1]]))
+      antisense[[i]] <- abs(S4Vectors::rev(pv_plus[i][[1]]))
     }
     abundance[i] <- estimate_abundance(sense[[i]], mask = mask, flank = flank,
                                        err_func = abundance_err_func)
@@ -557,9 +557,10 @@ simulate_data <- function(ta, annotations, jitter = 10) {
   for (seqlvl in names(ref_seqlengths)) {
     plus_sim <- integer(ref_seqlengths[seqlvl])
     minus_sim <- integer(ref_seqlengths[seqlvl])
-    # Simulate data transcript by transcript
+    # Get list of transcripts with non-zero abundances
     anno_sub_idx <- which(as.vector(GenomicRanges::seqnames(annotations) == seqlvl) &
                             annotations$score > 0)
+    # Iterate over transcripts with non-zero abundance and simulate data from archetypes
     for(i in anno_sub_idx) {
       adj_start <- GenomicRanges::start(annotations[i]) - flank_width
       adj_end <- GenomicRanges::end(annotations[i]) + flank_width
@@ -651,3 +652,44 @@ export_simulation <- function(annotations, data, ta, directory = ".",
   rtracklayer::export.bw(sim_dat$minus, minus_path)
   saveRDS(ta, file = ta_path)
 }
+
+#' @title View archetype
+#'
+#' @description Plots archetype in sense/antisense orientation
+#'
+#' @inheritParams simulate_data
+#' @param idx number id of archetype
+#'
+#' @name view_archetype
+#' @export
+view_archetype <- function(ta, idx) {
+  # Create GRanges for data tracks
+  sense <- iranges_to_granges(ta@data$sense[[idx]])
+  antisense <- iranges_to_granges(ta@data$antisense[[idx]])
+  GenomicRanges::score(antisense) <- -GenomicRanges::score(antisense)
+  options(ucscChromosomeNames=FALSE)
+  # Create scale track that labels flanking regions
+  region_widths <- c(ta@configs$flank,
+                     length(ta@data$sense[[idx]]) - 2 * ta@configs$flank,
+                     ta@configs$flank)
+  region_iranges <- IRanges::IRanges(start = cumsum(region_widths) - region_widths,
+                   width = region_widths,
+                   names = c("Flank", "Body", "Flank"))
+  # Create plotting tracks
+  axisTrack <- Gviz::GenomeAxisTrack(range = region_iranges)
+  sense_track <- Gviz::DataTrack(range = sense, type = "h", name = "sense", col = "blue")
+  antisense_track <- Gviz::DataTrack(range = antisense, type = "h", name= "antisense",
+                                     col = "red")
+  Gviz::plotTracks(list(axisTrack, sense_track, antisense_track), showId = TRUE)
+}
+
+iranges_to_granges <- function(x, chrom = "chr1", start = 0, strand = "+") {
+  start_v <- (cumsum(S4Vectors::runLength(x)) - S4Vectors::runLength(x)) + start
+  gr <- GenomicRanges::GRanges(chrom,
+                               IRanges::IRanges(start = start_v,
+                                                width = S4Vectors::runLength(x)),
+                               strand = strand, score = S4Vectors::runValue(x)
+  )
+  return(gr)
+}
+

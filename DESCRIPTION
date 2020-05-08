@@ -35,6 +35,7 @@ Suggests:
 VignetteBuilder: knitr
 RoxygenNote: 7.1.0
 Collate: 
+    'archetype_archives.R'
     'data_handling.R'
     'transcript_archetypes.R'
     'transcript_processing.R'

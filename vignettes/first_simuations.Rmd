@@ -7,67 +7,107 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-First lets download a database of transcripts. This package includes some convenience
-functions that allow us to download data directly from Ensembl and build a txdb, then
-cache it so to make repeated simulation easier. If you have already done this you may
-skip to loading the txdb as shown in the next step.
-```{r, include = FALSE}
-library(nascentRNASim)
-cache_set_dir()
-# Only download a txdb if you need a list of transcripts
-# download_txdb("hsapiens", ensembl_version = "98")
-```
-
-Now we can view the txdb that we have cached locally. (Again, only if you don't have one
-already).
-```{r list_txdb}
-cache_set_dir()
-list_cached_txdb()
-```
-
-Using the file name we can load it into our workspace.
-```{r load_txdb}
-txdb <- suppressMessages(load_txdb("homo_sapiens-grch38.p13-ensembl_genes_98.txdb"))
-```
+# Simulating nascent RNA data
 
 The procedure we use for simulating signals of polymerase density uses composites of
 empirical signal from exemplar regions. To do this, first we must curate a set of genes
 where virtually all polymerase density in the region can be confidently attributed to a
-single annotation. These genes are selected based on several characteristics: length,
-distance from other transcripts, and transcript biotype (optional). (NOTE: either TxDb
-or GRanges objects can be supplied to \code{filter_annotations()})
-
+single annotation. Included with this package are a curated set of archetypes that can
+be loaded as follows.
 ```{r}
-anno <- filter_annotations(txdb, min_distance = 7e3, min_length = 3e3,
-                   keep_chromosomes = 1:22, keep_tx_biotype = "protein_coding")
+ta <- load_archetype_set(id = "celastrol_dukler2017")
 ```
 
+Archetypes can be viewed as follows:
 ```{r}
-bigwig_plus <- "E:/deepTRED_data/6045_7157_27176_HNHKJBGXX_K562_0min_celastrol10uM_rep2_GB_CAGATC_R1_plus.primary.bw"
-bigwig_minus <- "E:/deepTRED_data/6045_7157_27176_HNHKJBGXX_K562_0min_celastrol10uM_rep2_GB_CAGATC_R1_minus.primary.bw"
-ta <- transcript_archetypes(anno, bigwig_plus, bigwig_minus, flank = 5e3,
-                                  abundance_filter = 0.1,
-                                  mask = c(1e3, 1e3)) 
+view_archetype(ta, 1)
 ```
 
+Because we simulate empirically from known profiles, the length of transcripts we can 
+simulate from are limited to the lengths we already have profiles for. This means that
+we must simulate transcript annotations based on our archetype set so that the lengths
+of the transcripts match. However, we do simulate such that we match the properties of
+an existing template as closely as possible. In order to do this we require a template
+which can be any existing GRanges object. In this case we use a pre-cached txdb of hg38
+and sample a thousand loci for simulation.
+
 ```{r}
+cache_set_dir()
+# Only download a txdb if you need a list of transcripts
+# download_txdb("hsapiens", ensembl_version = "98")
+txdb <- suppressMessages(load_txdb("homo_sapiens-grch37.p13-ensembl_genes_99.txdb"))
 template <- transcripts(txdb)
 sim_anno <- simulate_annotations(ta = ta, n = 1e3, template = template, seed = 5,
-                                 genome = "hg38")
+                                 genome = "hg19")
 ```
-Simulate abundances
+
+Then we simulate abundances for the annotations. In order to do that you must specify a
+function that generates a vector of random numbers greater than or equal to zero. It also
+must have as an argument n which specifies the number of observations to draw.(A number
+of the random number generators from the stats package fits all these requirements; eg.
+rlnorm, rpois, rgamma, etc.). Additionally, you may design your own custom function to
+pass here as long as it meets these criteria. Additional arguments to the `sampling_dist`
+function can be passed with their keywords. There is also a `zero_point_mass` argument
+that sets the fraction of genes with zero abundance.
 ```{r}
 annotations <- simulate_abundances(annotations = sim_anno, sampling_dist = rlnorm,
-                                zero_point_mass = 0.8)
+                                zero_point_mass = 0.8, meanlog = -1)
 ```
-Simulate 5' read density
+
+Then we resample from the archetypes to simulate 5' read density
 ```{r}
 sim_dat <- simulate_data(ta, annotations = annotations)
 ```
 
-Export data
+Once we've simulated data, the annotations and data it can be exported to a directory
+along with the archetype object used to generate it.
 ```{r}
-export_simulation(annotations, sim_dat, ta, "~/Downloads/test_nascent_sim", "test")
+export_simulation(annotations = annotations, data = sim_dat, ta = ta, 
+                    directory = "~/Downloads/test_nascent_sim_curated",
+                    simulation_id = "test")
 ```
 
+# Seting up new archetypes
+
+## Curate your own list of archetypes
+
+No automated way to do this currently. Generally we recommend filtering a list of
+transcripts by a crude metric fo per transcript abundance to get only high abundance
+candidates, then manually curating those that would be good archetypes. Here are the 
+rough criteria we used in curating the `celastrol_dukler2017` archetypes:
+  1. The transcript is clearly the only one producing the vast majority of the  signal
+    (or allowed multiple transcripts producing signal if they all have about the same
+    TSS/TES). This is cross-checked with PRO-cap data from Core & Martins et al. 2014
+  2. The signal between the transcript and adjacent transcripts drops off to
+    approximately background levels between them
+  3. The start of transcription is pretty close the the annotated TSS
+  4. The transcript averages one read per 20bp when quantified on the combined replicates
+
+Once a set of archetypes has been curated you can store a reduced lightweight bigwig that
+contains only the archetype regions plus some flanking signal. This makes it easier to
+package up for other people to use.
+```{r, eval = FALSE}
+store_reduced_archetype_bw(bed_path, bigwig_plus, bigwig_minus,
+                           out_dir = "~/Downloads", flank_length = 2e4)
+```
+
+## Create a `transcript_archetypes` object
+
+```{r, eval = FALSE}
+  id_path <- system.file("extdata", "archetype_sets", "celastrol_dukler2017",
+                         package = "nascentRNASim")
+  # Load archetype annotations
+  bed_path <- file.path(id_path, paste0(id, "_archetypes.bed"))
+  bed <- rtracklayer::import.bed(bed_path)
+
+  # Load bigwigs
+  bwp_path <- file.path(id_path, paste0(id, "_plus.bw"))
+  bwm_path <- file.path(id_path, paste0(id, "_minus.bw"))
+  # Create transcript_archetype object, see documentation for details
+  ta <- transcript_archetypes(transcripts = bed, bigwig_plus = bwp_path,
+                              bigwig_minus = bwm_path,
+                              flank = 6e3,
+                              abundance_filter = 0.05,
+                              mask = c(1e3, 1e3))
+```
 
