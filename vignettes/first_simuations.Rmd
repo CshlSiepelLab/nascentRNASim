@@ -15,6 +15,7 @@ where virtually all polymerase density in the region can be confidently attribut
 single annotation. Included with this package are a curated set of archetypes that can
 be loaded as follows.
 ```{r}
+library(nascentRNASim)
 ta <- load_archetype_set(id = "celastrol_dukler2017")
 ```
 
@@ -51,7 +52,7 @@ function can be passed with their keywords. There is also a `zero_point_mass` ar
 that sets the fraction of genes with zero abundance.
 ```{r}
 annotations <- simulate_abundances(annotations = sim_anno, sampling_dist = rlnorm,
-                                zero_point_mass = 0.8, meanlog = -1)
+                                zero_point_mass = 0.8, meanlog = -3)
 ```
 
 Then we resample from the archetypes to simulate 5' read density
@@ -86,9 +87,9 @@ rough criteria we used in curating the `celastrol_dukler2017` archetypes:
 Once a set of archetypes has been curated you can store a reduced lightweight bigwig that
 contains only the archetype regions plus some flanking signal. This makes it easier to
 package up for other people to use.
-```{r, eval = FALSE}
-store_reduced_archetype_bw(bed_path, bigwig_plus, bigwig_minus,
-                           out_dir = "~/Downloads", flank_length = 2e4)
+```{r}
+# store_reduced_archetype_bw(bed_path, bigwig_plus, bigwig_minus,
+# out_dir = "~/Downloads", flank_length = 2e4)
 ```
 
 ## Create a `transcript_archetypes` object

@@ -285,8 +285,10 @@ simulate_annotations <-  function(ta, n, template, genome = NULL, tx_min_length 
   loci_strands <- sim_loci_properties$loci_strand
 
   # Generate annotations as GRanges object
-  tx_gr <-  annotate_loci(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps, loci_strands,
+  tx_gr <- annotate_loci(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps, loci_strands,
                 telomere_buffer, si)
+  tx_gr <- GenomeInfoDb::sortSeqlevels(tx_gr)
+  tx_gr <- GenomicRanges::sort(tx_gr, ignore.strand = T)
   GenomeInfoDb::seqlevelsStyle(tx_gr) <- final_style
 
   return(tx_gr)
@@ -418,12 +420,15 @@ annotate_loci <- function(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps,
   final_tx_end[tx_plus] <- final_tx_start[tx_plus] + tx_width[tx_plus] - 1
   final_tx_end[!tx_plus] <- loci_end[!tx_plus] - unlist(tx_fiveprime_dist)[!tx_plus]
 
-  # Output transcript annotations on a single chromsome
+  # Create GRanges from transcript annotations
+  # For now gene ids and loci ids are 1:1 but that may change in future
   tx_gr <- GenomicRanges::GRanges(
     rep(loci_seq_name, times = tx_per_loci),
     IRanges::IRanges(start = final_tx_start, end = final_tx_end),
     tx_strands,
-    loci = rep(seq_along(tx_per_loci), tx_per_loci)
+    loci = rep(seq_along(tx_per_loci), tx_per_loci),
+    gene_id = sprintf("G%08d", rep(seq_along(tx_per_loci), tx_per_loci)),
+    transcript_id = sprintf("T%08d", seq_along(final_tx_start))
   )
 
   tx_gr <- tx_gr[GenomicRanges::start(tx_gr) > 0]
@@ -637,17 +642,21 @@ resample_reads <- function(x, size, replace = T, jitter = 0) {
 #' @param simulation_id character string to name simulation outputs with
 #'
 #' @return A resampled numeric vector of 5' read counts
-#'
+#' @importFrom data.table :=
 #' @name resample_reads
 #' @export
 export_simulation <- function(annotations, data, ta, directory = ".",
                               simulation_id = "sim") {
   dir.create(directory, showWarnings = F, recursive = T)
-  bed_path <- file.path(directory, paste0(simulation_id, ".bed"))
+  bed_path <- file.path(directory, paste0(simulation_id, ".bed.gz"))
   plus_path <- file.path(directory, paste0(simulation_id, "_plus.bw"))
   minus_path <- file.path(directory, paste0(simulation_id, "_minus.bw"))
   ta_path <- file.path(directory, paste0(simulation_id, "_archetypes.RData"))
-  rtracklayer::export.bed(annotations, bed_path)
+  bed <- data.table::as.data.table(annotations)
+  bed[, start := start - 1]
+  bed <- bed[, .(seqnames, start, end, '.', bed$score , strand, gene_id, transcript_id)]
+  data.table::fwrite(file = bed_path, x = bed, compress = "gzip", sep = "\t",
+                     col.names = F)
   rtracklayer::export.bw(sim_dat$plus, plus_path)
   rtracklayer::export.bw(sim_dat$minus, minus_path)
   saveRDS(ta, file = ta_path)
