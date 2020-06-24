@@ -25,9 +25,6 @@ and tail of the transcripts (respectively)}
 \item{bigwig_plus}{polymerase density signal from the plus strand}
 
 \item{bigwig_minus}{polymerase density signal from the minus strand}
-
-\item{tx}{A \code{\link[GenomicRanges]{GRanges-class}} or
-\code{\link[GenomicFeatures]{TxDb-class}}}
 }
 \value{
 A single abundance estimation

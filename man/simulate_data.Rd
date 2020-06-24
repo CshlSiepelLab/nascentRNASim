@@ -4,14 +4,17 @@
 \alias{simulate_data}
 \title{Simulate read data}
 \usage{
-simulate_data(ta, annotations, jitter = 10)
+simulate_data(ta, annotations, jitter = 0, show_progress = F)
 }
 \arguments{
 \item{ta}{a \link{transcript_archetypes-class} object}
 
-\item{annotations}{a \link[GenomicRanges]{GRanges-class} of transcript annotations}
+\item{annotations}{a \code{GRanges} object with a \code{score} column indicating
+abundances}
 
 \item{jitter}{amount by which reads can be shifted to the left or right (default: 0)}
+
+\item{show_progress}{show progress bar}
 }
 \value{
 A \link[GenomicRanges]{GRanges-class}

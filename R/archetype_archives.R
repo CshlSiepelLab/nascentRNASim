@@ -1,9 +1,22 @@
+#' @title List available archetype sets
+#'
+#' @description Lists archetypes sets that are included in this package
+#' @return A character vector
+#'
 #' @export
 list_archetype_set <- function() {
   adir <- system.file("extdata", "archetype_sets", package = "nascentRNASim")
   return(dir(adir))
 }
 
+#' @title Load archetype set included in package
+#'
+#' @description Load archetype set included in package. To see available sets run
+#' \code{list_archetype_set()}.
+#' @param id the id of the archetype set to load
+#'
+#' @return A \code{transcript_archetypes} object
+#'
 #' @export
 load_archetype_set <- function(id = "celastrol_dukler2017") {
   archive_dir <- system.file("extdata", "archetype_sets", package = "nascentRNASim")
@@ -29,6 +42,20 @@ load_archetype_set <- function(id = "celastrol_dukler2017") {
   return(ta)
 }
 
+
+#' @title Save an archetype set
+#'
+#' @description Save subset of data required to make an archetype set.
+#'
+#' @param bed_path path to bed file that holds archetype regions
+#' @param bigwig_plus path to bigwig for plus strand
+#' @param bigwig_minus path to bigwig for minus strand
+#' @param out_dir directory to save files in
+#' @param flank_length length of region flanking those in bed file to save in the
+#' subsetted bigwig files
+#'
+#' @return NULL
+#'
 #' @export
 store_reduced_archetype_bw <- function(bed_path, bigwig_plus, bigwig_minus,
                                        out_dir = ".", flank_length = 2e4) {

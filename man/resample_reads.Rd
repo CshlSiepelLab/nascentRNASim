@@ -20,17 +20,22 @@ export_simulation(
 
 \item{size}{number of reads to sample}
 
+\item{replace}{to sample with replacement (default: TRUE)}
+
 \item{jitter}{amount by which reads can be shifted to the left or right (default: 0)}
+
+\item{annotations}{a \code{GRanges} object with a \code{score} column indicating
+abundances}
 
 \item{data}{a two element list containing a \code{plus} and \code{minus}
 \code{\link[IRanges]{RleList}} simulated from the \link{simulate_data}
 function}
 
+\item{ta}{a \link{transcript_archetypes-class} object}
+
 \item{directory}{directory to write output to}
 
 \item{simulation_id}{character string to name simulation outputs with}
-
-\item{whether}{to sample with replacement (default: TRUE)}
 }
 \value{
 A resampled numeric vector of 5' read counts

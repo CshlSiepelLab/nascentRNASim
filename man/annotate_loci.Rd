@@ -27,7 +27,10 @@ by locus}
 
 \item{loci_strands}{a vector of the strandedness of each loci}
 
-\item{start_buffer}{the length of the start of a chromosome to leave blank}
+\item{telomere_buffer}{regions at the head and tail of each chromosome that do not
+contain transcripts}
+
+\item{seq_info}{a \code{seqinfo} object used to determine chromosome lengths}
 }
 \value{
 A \link[GenomicRanges]{GRanges-class}

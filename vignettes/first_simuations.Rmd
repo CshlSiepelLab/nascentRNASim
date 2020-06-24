@@ -32,13 +32,13 @@ an existing template as closely as possible. In order to do this we require a te
 which can be any existing GRanges object. In this case we use a pre-cached txdb of hg38
 and sample a thousand loci for simulation.
 
-```{r}
+```{r, eval = FALSE}
 cache_set_dir()
 # Only download a txdb if you need a list of transcripts
 # download_txdb("hsapiens", ensembl_version = "98")
 txdb <- suppressMessages(load_txdb("homo_sapiens-grch37.p13-ensembl_genes_99.txdb"))
 template <- transcripts(txdb)
-sim_anno <- simulate_annotations(ta = ta, n = 1e3, template = template, seed = 5,
+sim_anno <- simulate_annotations(ta = ta, n = 10, template = template, seed = 5,
                                  genome = "hg19")
 ```
 
@@ -50,21 +50,21 @@ rlnorm, rpois, rgamma, etc.). Additionally, you may design your own custom funct
 pass here as long as it meets these criteria. Additional arguments to the `sampling_dist`
 function can be passed with their keywords. There is also a `zero_point_mass` argument
 that sets the fraction of genes with zero abundance.
-```{r}
-annotations <- simulate_abundances(annotations = sim_anno, sampling_dist = rlnorm,
-                                zero_point_mass = 0.8, meanlog = -3)
+```{r, eval = FALSE}
+annotations <- simulate_abundances(annotations = sim_anno, sampling_dist = rgtex)
 ```
 
 Then we resample from the archetypes to simulate 5' read density
-```{r}
-sim_dat <- simulate_data(ta, annotations = annotations)
+```{r, eval = FALSE}
+sim_dat <- simulate_data(ta, annotations = annotations, show_progress = T)
 ```
 
 Once we've simulated data, the annotations and data it can be exported to a directory
 along with the archetype object used to generate it.
-```{r}
+```{r, eval = FALSE}
+tmp_dir <- tempdir()
 export_simulation(annotations = annotations, data = sim_dat, ta = ta, 
-                    directory = "~/Downloads/test_nascent_sim_curated",
+                    directory = tmp_dir,
                     simulation_id = "test")
 ```
 
@@ -87,7 +87,7 @@ rough criteria we used in curating the `celastrol_dukler2017` archetypes:
 Once a set of archetypes has been curated you can store a reduced lightweight bigwig that
 contains only the archetype regions plus some flanking signal. This makes it easier to
 package up for other people to use.
-```{r}
+```{r, eval = FALSE}
 # store_reduced_archetype_bw(bed_path, bigwig_plus, bigwig_minus,
 # out_dir = "~/Downloads", flank_length = 2e4)
 ```

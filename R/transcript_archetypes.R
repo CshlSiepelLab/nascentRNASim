@@ -38,6 +38,8 @@ methods::setClass("transcript_archetypes",
 #' transcripts with an estimated abundance less than this are removed (default = 100)
 #' @param abundance_err_func Error function to use when estimating abundance (defaults
 #' to identity)
+#' @param mask a two element vector containing the number of bases to ignore at the head
+#' and tail of the transcript when estimating abundance
 #'
 #' @return a \code{\link{transcript_archetypes-class}} object
 #'
@@ -131,8 +133,6 @@ transcript_archetypes <- function(transcripts, bigwig_plus, bigwig_minus, flank 
 #'
 #' @description Estimates abundance for transcript archetypes
 #'
-#' @param tx A \code{\link[GenomicRanges]{GRanges-class}} or
-#' \code{\link[GenomicFeatures]{TxDb-class}}
 #' @param x A vector of counts
 #' @param err_func error function (currently only identity supported)
 #' @param mask a two element vector indicating the numbers of bases to skip at the head
@@ -168,6 +168,9 @@ estimate_abundance <- function(x, err_func, mask = c(0, 0), flank) {
 #' @param min_loci_tx minimum number of transcripts per loci
 #' @param max_loci_tx maximum number of transcripts per loci
 #' @param seed random seed to use for simulation
+#' @param genome a genome name that will be used to retrieve chromosome lengths if
+#' they are not already specified
+#' @param tx_min_length do not simulate transcripts shorter than this length
 #'
 #' @details Stuff about methods
 #'
@@ -182,7 +185,7 @@ simulate_annotations <-  function(ta, n, template, genome = NULL, tx_min_length 
                                   min_loci_tx = 1, max_loci_tx = 40, seed = NULL) {
   # If seed is null choose a seed randomly
   if (is.null(seed)) {
-    seed <- round(runif(1) * 1e7)
+    seed <- round(stats::runif(1) * 1e7)
   }
   set.seed(seed)
 
@@ -208,7 +211,7 @@ simulate_annotations <-  function(ta, n, template, genome = NULL, tx_min_length 
       message("seqlengths not specified in annotation object, looking up seqlengths")
       genome_id <- GenomeInfoDb::mapGenomeBuilds(genome, "UCSC")$ucscID[1]
       if (!is.null(genome_id)) {
-        if (packageVersion("GenomeInfoDb") > 1.23) {
+        if (utils::packageVersion("GenomeInfoDb") > 1.23) {
           chr_info <- GenomeInfoDb::getChromInfoFromUCSC(genome_id)
           # Create seqinfo for annotation
           si <- with(chr_info, GenomeInfoDb::Seqinfo(
@@ -343,7 +346,9 @@ loci_property_sim <- function(loci, n) {
 #' by locus
 #' @param loci_gaps a vector of offsets between loci
 #' @param loci_strands a vector of the strandedness of each loci
-#' @param start_buffer the length of the start of a chromosome to leave blank
+#' @param telomere_buffer regions at the head and tail of each chromosome that do not
+#' contain transcripts
+#' @param seq_info a \code{seqinfo} object used to determine chromosome lengths
 #'
 #' @return A \link[GenomicRanges]{GRanges-class}
 #'
@@ -382,7 +387,8 @@ annotate_loci <- function(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps,
     warning(sum(loci_end > cum_seq_lengths[length(cum_seq_lengths)]), " of ",
             length(loci_end), " loci go beyond the end of the genome and have been ",
             "removed. Consider simulating fewer loci.")
-    keep_loci <- tail(which(loci_end < cum_seq_lengths[length(cum_seq_lengths)]), 1)
+    keep_loci <- utils::tail(which(loci_end < cum_seq_lengths[length(cum_seq_lengths)]),
+                             1)
     loci_end <- loci_end[seq_len(keep_loci)]
     tx_archetypes <- tx_archetypes[seq_len(keep_loci)]
     tx_fiveprime_dist <- tx_fiveprime_dist[seq_len(keep_loci)]
@@ -449,8 +455,6 @@ annotate_loci <- function(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps,
 #' package fits all these requirements; eg. rlnorm, rpois, rgamma, etc.). Additionally,
 #' you may design your own custom function to pass here as long as it meets these
 #' criteria.
-#' @param zero_point_mass weight of 0-valued point mass to mix with the sampling
-#' distribution
 #' @param seed random seed for reproducible sampling
 #' @param ... any arguments to be passed to the \code{sampling_dist} function
 #'
@@ -460,11 +464,11 @@ annotate_loci <- function(ta, tx_archetypes, tx_fiveprime_dist, loci_gaps,
 #' @name simulate_abundances
 #' @rdname simulate_abundances
 #' @export
-simulate_abundances <- function(annotations, sampling_dist = rlnorm,
-                                            zero_point_mass = 0.8, seed = NULL, ...) {
+simulate_abundances <- function(annotations, sampling_dist = rgtex,
+                                seed = NULL, ...) {
   # If seed is null choose a seed randomly
   if (is.null(seed)) {
-    seed <- round(runif(1) * 1e7)
+    seed <- round(stats::runif(1) * 1e7)
   }
   set.seed(seed)
 
@@ -481,20 +485,15 @@ simulate_abundances <- function(annotations, sampling_dist = rlnorm,
     stop("annotation must be a GRanges")
   }
 
-  # Initialize aboundance vector
-  annotations$score <- numeric(length(annotations))
-
-  # Calculate non-zero element indicies
-  nonzero_abundance <- which(runif(length(annotations)) > zero_point_mass)
-
   # Parse other args and extract any that should be
   args <- list(...)
   sampling_args <- formals(sampling_dist)
   sampling_args[intersect(methods::formalArgs(sampling_dist), names(args))] <-
     args[intersect(methods::formalArgs(sampling_dist), names(args))]
-  sampling_args$n <- length(nonzero_abundance)
+  sampling_args$n <- length(annotations)
+  # Sample abundances
+  annotations$score <- do.call(sampling_dist, sampling_args)
 
-  annotations$score[nonzero_abundance] <- do.call(sampling_dist, sampling_args)
   if (any(annotations$abundance) < 0) {
     stop("abundances less than zero were generated from the simulating distribution")
   }
@@ -505,17 +504,23 @@ simulate_abundances <- function(annotations, sampling_dist = rlnorm,
 #'
 #' @description Take a \link[GenomicRanges]{GRanges-class} of transcript annotations
 #' and a \code{transcript_archetypes} object and simulate read counts.
+#' @importFrom utils setTxtProgressBar
+#'
+#' @param annotations a \code{GRanges} object with a \code{score} column indicating
+#' abundances
+#' @param ta a \link{transcript_archetypes-class} object
 #'
 #' @inheritParams simulate_annotations
 #' @inheritParams simulate_abundances
 #' @inheritParams resample_reads
+#' @param show_progress show progress bar
 #'
 #' @return A \link[GenomicRanges]{GRanges-class}
 #'
 #' @name simulate_data
 #' @rdname simulate_data
 #' @export
-simulate_data <- function(ta, annotations, jitter = 10) {
+simulate_data <- function(ta, annotations, jitter = 0, show_progress = F) {
   # Drop unused seqlevels
   GenomeInfoDb::seqlevels(annotations) <- GenomeInfoDb::seqlevelsInUse(annotations)
 
@@ -559,6 +564,10 @@ simulate_data <- function(ta, annotations, jitter = 10) {
   flank_width <- ta@configs$flank
   plus <- IRanges::RleList()
   minus <- IRanges::RleList()
+  if (show_progress) {
+    pb <- utils::txtProgressBar(min = 0, max = sum(annotations$score > 0), style = 3)
+  }
+  pb_tracker <- 0
   for (seqlvl in names(ref_seqlengths)) {
     plus_sim <- integer(ref_seqlengths[seqlvl])
     minus_sim <- integer(ref_seqlengths[seqlvl])
@@ -589,10 +598,15 @@ simulate_data <- function(ta, annotations, jitter = 10) {
           resample_reads(ta@data$antisense[[which_arch[i]]],
                          antisense_sampling_depth[i], replace = T, jitter = jitter)
       }
+      pb_tracker <- pb_tracker + 1
+      if (show_progress) {
+        setTxtProgressBar(pb, value = pb_tracker)
+      }
     }
     plus[[seqlvl]] <- S4Vectors::Rle(plus_sim)
     minus[[seqlvl]] <- S4Vectors::Rle(minus_sim)
   }
+  close(pb)
   return(list(plus = plus, minus = minus))
 }
 
@@ -603,7 +617,7 @@ simulate_data <- function(ta, annotations, jitter = 10) {
 #'
 #' @param x a numeric or \code{Rle} vector
 #' @param size number of reads to sample
-#' @param whether to sample with replacement (default: TRUE)
+#' @param replace to sample with replacement (default: TRUE)
 #' @param jitter amount by which reads can be shifted to the left or right (default: 0)
 #'
 #' @return A resampled numeric vector of 5' read counts
@@ -647,6 +661,17 @@ resample_reads <- function(x, size, replace = T, jitter = 0) {
 #' @export
 export_simulation <- function(annotations, data, ta, directory = ".",
                               simulation_id = "sim") {
+  ## Define data.table variables locally so that there is no R CMD CHECK complaint
+  start <- NULL
+  . <- NULL
+  seqnames <- NULL
+  end <- NULL
+  strand <- NULL
+  gene_id <- NULL
+  transcript_id <- NULL
+  sim_dat <- NULL
+
+  ## Back to everything else
   dir.create(directory, showWarnings = F, recursive = T)
   bed_path <- file.path(directory, paste0(simulation_id, ".bed.gz"))
   plus_path <- file.path(directory, paste0(simulation_id, "_plus.bw"))

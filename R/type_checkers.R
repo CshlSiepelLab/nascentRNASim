@@ -1,6 +1,7 @@
 #' is.GRanges
 #'
 #' Checks if object is a \code{\link[GenomicRanges]{GRanges-class}} object
+#' @param x an object
 #'
 #' @return logical
 #'
@@ -12,7 +13,7 @@ is.GRanges <- function(x) {
 #' is.GRangesList
 #'
 #' Checks if object is a \code{\link[GenomicRanges]{GRangesList-class}} object
-#'
+#' @param x an object
 #' @return logical
 #'
 #' @export

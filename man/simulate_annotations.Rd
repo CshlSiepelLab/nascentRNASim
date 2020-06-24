@@ -24,6 +24,11 @@ simulate_annotations(
 \item{template}{can be a \code{\link[GenomicRanges]{GRanges-class}} that provides
 template annotations as a basis for simulating loci with realistic properties.}
 
+\item{genome}{a genome name that will be used to retrieve chromosome lengths if
+they are not already specified}
+
+\item{tx_min_length}{do not simulate transcripts shorter than this length}
+
 \item{method}{method to use for simulating intra-loci transcript properties. The two
 methods are \code{neighbors} and \code{empirical}. More in information in details.}
 
