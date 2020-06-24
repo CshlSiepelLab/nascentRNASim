@@ -161,7 +161,7 @@ filter_annotations <- function(tx, min_distance = 2e4, min_length = 3e3,
   candidates <- tx_gr[keep]
 
   # Now filter the candidates by length and txtype if specified
-  candidates <- candidates[width(candidates) >= min_length]
+  candidates <- candidates[GenomicRanges::width(candidates) >= min_length]
 
   # If a tx_type filter is specified, apply it now
   if (!is.null(keep_tx_biotype)) {
@@ -215,7 +215,7 @@ inactive_regions <- function(tx, tx_buffer_length = 2e4, min_length = 3e3,
   candidates <- GenomicRanges::gaps(GenomicRanges::reduce(tx_gr + tx_buffer_length))
 
   # Now filter the candidates by length
-  candidates <- candidates[width(candidates) >= min_length]
+  candidates <- candidates[GenomicRanges::width(candidates) >= min_length]
   return(candidates)
 }
 

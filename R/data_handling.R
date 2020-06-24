@@ -24,7 +24,7 @@ assert_chromosome_exists <- function(chromosome, bigwig_file) {
 #'
 #' Class \code{profile_views} holds views of ranges on a dataset.
 #'
-#' @slot transcripts a \code{\link[GenomicRanges]{GRanges-class}} that holds
+#' @slot query_ranges a \code{\link[GenomicRanges]{GRanges-class}} that holds
 #' all the query ranges
 #' @slot profiles a \code{\link[IRanges]{ViewsList-class}} object that holds the data
 #' views
@@ -102,16 +102,23 @@ profile_views <- function(bigwig_file, query_ranges) {
   ))
 }
 
+
+methods::setGeneric()
+
 #' @title subsetting
 #'
 #' @description Convenience subsetting for views object. Retrieves view based on index of
 #' query range.
 #'
-#' @param i query range index
+#' @param x \link{profile_views-class} object
+#' @param i subset entries of views object
+#' @param j unsupported
+#' @param drop unsupported
+#' @param ... just for compatibility with S4 method
 #'
 #' @return A views object
 #' @export
-setMethod("[", c(x = "profile_views", i = "numeric", j = "missing", drop = "ANY"),
+methods::setMethod("[", c(x = "profile_views", i = "numeric", j = "missing", drop = "ANY"),
           function(x, i, j, ..., drop=TRUE){
             i <- as.integer(i)
             return(x@profiles[[x@idx[i, 2]]][x@idx[i, 3]])
@@ -124,9 +131,10 @@ setMethod("[", c(x = "profile_views", i = "numeric", j = "missing", drop = "ANY"
 #' @description Display object
 #'
 #' @inheritParams methods::show
+#' @importMethodsFrom methods show
 #'
 #' @export
-setMethod("show", c(object = "profile_views"),
+methods::setMethod("show", c(object = "profile_views"),
           function(object) {
             print(paste("profile_views object with", length(object@query_ranges),
                         "views"))

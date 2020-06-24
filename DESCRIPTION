@@ -6,7 +6,7 @@ Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 bioCviews:
@@ -17,17 +17,20 @@ Imports:
     GenomicRanges,
     GenomeInfoDb (>= 1.22.1),
     data.table (>= 1.12.8),
+    R.utils,
+    utils,
+    stats,
     rtracklayer (>= 1.46.0),
     GenomicFeatures,
-    GenomeInfoDb,
-    GenomicRanges,
     S4Vectors,
     IRanges,
     methods,
     rappdirs,
     stringr,
     AnnotationDbi,
-    biomaRt
+    biomaRt,
+    BiocGenerics,
+    Gviz
 Suggests: 
     knitr,
     rmarkdown,
@@ -37,6 +40,7 @@ RoxygenNote: 7.1.0
 Collate: 
     'archetype_archives.R'
     'data_handling.R'
+    'misc_distributions.R'
     'transcript_archetypes.R'
     'transcript_processing.R'
     'txdb_handling.R'
