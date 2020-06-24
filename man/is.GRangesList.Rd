@@ -6,6 +6,9 @@
 \usage{
 is.GRangesList(x)
 }
+\arguments{
+\item{x}{an object}
+}
 \value{
 logical
 }

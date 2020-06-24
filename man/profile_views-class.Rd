@@ -10,7 +10,7 @@ Class \code{profile_views} holds views of ranges on a dataset.
 \section{Slots}{
 
 \describe{
-\item{\code{transcripts}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
+\item{\code{query_ranges}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
 all the query ranges}
 
 \item{\code{profiles}}{a \code{\link[IRanges]{ViewsList-class}} object that holds the data

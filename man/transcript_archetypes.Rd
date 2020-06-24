@@ -29,6 +29,9 @@ use in simulation}
 \item{abundance_filter}{minimal abundance value for a viable archetype gene, all
 transcripts with an estimated abundance less than this are removed (default = 100)}
 
+\item{mask}{a two element vector containing the number of bases to ignore at the head
+and tail of the transcript when estimating abundance}
+
 \item{abundance_err_func}{Error function to use when estimating abundance (defaults
 to identity)}
 }

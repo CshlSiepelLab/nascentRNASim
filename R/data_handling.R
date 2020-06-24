@@ -102,9 +102,6 @@ profile_views <- function(bigwig_file, query_ranges) {
   ))
 }
 
-
-methods::setGeneric()
-
 #' @title subsetting
 #'
 #' @description Convenience subsetting for views object. Retrieves view based on index of
@@ -116,6 +113,7 @@ methods::setGeneric()
 #' @param drop unsupported
 #' @param ... just for compatibility with S4 method
 #'
+#' @aliases [
 #' @return A views object
 #' @export
 methods::setMethod("[", c(x = "profile_views", i = "numeric", j = "missing", drop = "ANY"),

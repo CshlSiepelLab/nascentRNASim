@@ -2,12 +2,21 @@
 % Please edit documentation in R/data_handling.R
 \name{[,profile_views,numeric,missing,ANY-method}
 \alias{[,profile_views,numeric,missing,ANY-method}
+\alias{[}
 \title{subsetting}
 \usage{
 \S4method{[}{profile_views,numeric,missing,ANY}(x, i, j, ..., drop = TRUE)
 }
 \arguments{
-\item{i}{query range index}
+\item{x}{\link{profile_views-class} object}
+
+\item{i}{subset entries of views object}
+
+\item{j}{unsupported}
+
+\item{...}{just for compatibility with S4 method}
+
+\item{drop}{unsupported}
 }
 \value{
 A views object

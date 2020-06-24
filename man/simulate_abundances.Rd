@@ -4,13 +4,7 @@
 \alias{simulate_abundances}
 \title{Simulate abundance values}
 \usage{
-simulate_abundances(
-  annotations,
-  sampling_dist = rlnorm,
-  zero_point_mass = 0.8,
-  seed = NULL,
-  ...
-)
+simulate_abundances(annotations, sampling_dist = rgtex, seed = NULL, ...)
 }
 \arguments{
 \item{annotations}{a \link[GenomicRanges]{GRanges-class} of transcript annotations}
@@ -21,9 +15,6 @@ of observations to draw. (A number of the random number generators from the stat
 package fits all these requirements; eg. rlnorm, rpois, rgamma, etc.). Additionally,
 you may design your own custom function to pass here as long as it meets these
 criteria.}
-
-\item{zero_point_mass}{weight of 0-valued point mass to mix with the sampling
-distribution}
 
 \item{seed}{random seed for reproducible sampling}
 
