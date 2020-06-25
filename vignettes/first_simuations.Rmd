@@ -38,7 +38,7 @@ cache_set_dir()
 # download_txdb("hsapiens", ensembl_version = "98")
 txdb <- suppressMessages(load_txdb("homo_sapiens-grch37.p13-ensembl_genes_99.txdb"))
 template <- transcripts(txdb)
-sim_anno <- simulate_annotations(ta = ta, n = 10, template = template, seed = 5,
+sim_anno <- simulate_annotations(ta = ta, n = 100, template = template, seed = 5,
                                  genome = "hg19")
 ```
 

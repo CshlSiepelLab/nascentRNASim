@@ -4,13 +4,21 @@
 \alias{simulate_data}
 \title{Simulate read data}
 \usage{
-simulate_data(ta, annotations, jitter = 0, show_progress = F)
+simulate_data(
+  ta,
+  annotations,
+  library_depth = 3e+07,
+  jitter = 0,
+  show_progress = F
+)
 }
 \arguments{
 \item{ta}{a \link{transcript_archetypes-class} object}
 
 \item{annotations}{a \code{GRanges} object with a \code{score} column indicating
 abundances}
+
+\item{library_depth}{library depth to simulate (approximate)}
 
 \item{jitter}{amount by which reads can be shifted to the left or right (default: 0)}
 
