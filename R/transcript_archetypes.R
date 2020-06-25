@@ -668,16 +668,6 @@ resample_reads <- function(x, size, replace = T, jitter = 0) {
 #' @export
 export_simulation <- function(annotations, data, ta, directory = ".",
                               simulation_id = "sim") {
-  ## Define data.table variables locally so that there is no R CMD CHECK complaint
-  start <- NULL
-  . <- NULL
-  seqnames <- NULL
-  end <- NULL
-  strand <- NULL
-  gene_id <- NULL
-  transcript_id <- NULL
-  sim_dat <- NULL
-
   ## Back to everything else
   dir.create(directory, showWarnings = F, recursive = T)
   bed_path <- file.path(directory, paste0(simulation_id, ".bed.gz"))
@@ -734,3 +724,13 @@ iranges_to_granges <- function(x, chrom = "chr1", start = 0, strand = "+") {
   return(gr)
 }
 
+utils::globalVariables(c(
+  "start",
+  ".",
+  "seqnames",
+  "end",
+  "strand",
+  "gene_id",
+  "transcript_id",
+  "sim_dat")
+)
