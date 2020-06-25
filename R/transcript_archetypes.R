@@ -514,13 +514,15 @@ simulate_abundances <- function(annotations, sampling_dist = rgtex,
 #' @inheritParams simulate_abundances
 #' @inheritParams resample_reads
 #' @param show_progress show progress bar
+#' @param library_depth library depth to simulate (approximate)
 #'
 #' @return A \link[GenomicRanges]{GRanges-class}
 #'
 #' @name simulate_data
 #' @rdname simulate_data
 #' @export
-simulate_data <- function(ta, annotations, jitter = 0, show_progress = F) {
+simulate_data <- function(ta, annotations, library_depth = 3e7, jitter = 0,
+                          show_progress = F) {
   # Drop unused seqlevels
   GenomeInfoDb::seqlevels(annotations) <- GenomeInfoDb::seqlevelsInUse(annotations)
 
@@ -552,12 +554,15 @@ simulate_data <- function(ta, annotations, jitter = 0, show_progress = F) {
   arch_antisense_read_depth <- unlist(lapply(ta@data$antisense, sum))
 
   # Get sampling depth for each annotation
-  sense_sampling_depth <-
-    round((annotations$score / ta@abundance_estimate[which_arch]) *
-            arch_sense_read_depth[which_arch])
-  antisense_sampling_depth <-
-    round((annotations$score / ta@abundance_estimate[which_arch]) *
-            arch_antisense_read_depth[which_arch])
+  sense_sampling_depth <- (annotations$score / ta@abundance_estimate[which_arch]) *
+    arch_sense_read_depth[which_arch]
+  antisense_sampling_depth <- (annotations$score / ta@abundance_estimate[which_arch]) *
+    arch_antisense_read_depth[which_arch]
+
+  # Compute global scaling factor to get out correct total number of reads
+  lib_size_scale_factor <- library_depth / sum(sense_sampling_depth, antisense_sampling_depth)
+  sense_sampling_depth <- round(sense_sampling_depth * lib_size_scale_factor)
+  antisense_sampling_depth <- round(antisense_sampling_depth * lib_size_scale_factor)
 
   # Iterate over seqlevels and simulate per chromosome
   ref_seqlengths <- GenomeInfoDb::seqlengths(annotations)
@@ -606,7 +611,9 @@ simulate_data <- function(ta, annotations, jitter = 0, show_progress = F) {
     plus[[seqlvl]] <- S4Vectors::Rle(plus_sim)
     minus[[seqlvl]] <- S4Vectors::Rle(minus_sim)
   }
-  close(pb)
+  if (show_progress) {
+    close(pb)
+  }
   return(list(plus = plus, minus = minus))
 }
 
