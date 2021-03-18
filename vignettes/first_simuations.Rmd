@@ -20,7 +20,7 @@ ta <- load_archetype_set(id = "celastrol_dukler2017")
 ```
 
 Archetypes can be viewed as follows:
-```{r}
+```{r, fig.height=4, fig.width=6, fig.align='center'}
 view_archetype(ta, 1)
 ```
 
@@ -44,7 +44,7 @@ sim_anno <- simulate_annotations(ta = ta, n = 100, template = template, seed = 5
 
 Then we simulate abundances for the annotations. In order to do that you must specify a
 function that generates a vector of random numbers greater than or equal to zero. It also
-must have as an argument n which specifies the number of observations to draw.(A number
+must have as an argument n which specifies the number of observations to draw (A number
 of the random number generators from the stats package fits all these requirements; eg.
 rlnorm, rpois, rgamma, etc.). Additionally, you may design your own custom function to
 pass here as long as it meets these criteria. Additional arguments to the `sampling_dist`
@@ -76,13 +76,11 @@ No automated way to do this currently. Generally we recommend filtering a list o
 transcripts by a crude metric fo per transcript abundance to get only high abundance
 candidates, then manually curating those that would be good archetypes. Here are the 
 rough criteria we used in curating the `celastrol_dukler2017` archetypes:
-  1. The transcript is clearly the only one producing the vast majority of the  signal
-    (or allowed multiple transcripts producing signal if they all have about the same
-    TSS/TES). This is cross-checked with PRO-cap data from Core & Martins et al. 2014
-  2. The signal between the transcript and adjacent transcripts drops off to
-    approximately background levels between them
-  3. The start of transcription is pretty close the the annotated TSS
-  4. The transcript averages one read per 20bp when quantified on the combined replicates
+
+  1. The transcript is clearly the only one producing the vast majority of the signal (or allowed multiple transcripts producing signal if they all have about the same TSS/TES). This is cross-checked with PRO-cap data from Core & Martins et al. 2014.
+  2. The signal between the transcript and adjacent transcripts drops off to approximately background levels between them.
+  3. The start of transcription is pretty close the the annotated TSS.
+  4. The transcript averages one read per 20bp when quantified on the combined replicates.
 
 Once a set of archetypes has been curated you can store a reduced lightweight bigwig that
 contains only the archetype regions plus some flanking signal. This makes it easier to
